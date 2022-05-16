@@ -21,3 +21,4 @@ def order_created(order_id):
         [order.email]
     )
     return mail_sent
+# celery tasks
