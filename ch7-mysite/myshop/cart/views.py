@@ -1,8 +1,9 @@
+from email.policy import default
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from coupons.forms import CouponApplyForm
 # from myshop.coupons.views import coupon_apply
-from shop.models import Product
+from  shop.models import Product, Category, ItemOptions, ExtraItemOptions
 from .cart import Cart
 from .forms import CartAddProductForm
 
@@ -26,10 +27,18 @@ def cart_add(request, product_id):
     """
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id)
+
     form = CartAddProductForm(request.POST)
     if form.is_valid():
         cd = form.cleaned_data
-        cart.add(product=product, quantity=cd['quantity'], override_quantity=cd['override'])
+ 
+        cart.add(
+            product=product, 
+            quantity=cd['quantity'],
+            override_quantity=cd['override'],
+            item_options = cd['item_options'],
+            extra_item_options= cd['extra_item_options']
+        )
         return redirect('cart:cart_detail')
 
 @require_POST
@@ -64,22 +73,29 @@ def cart_detail(request):
         dict: cart
     """
     cart = Cart(request)
-    for item in cart:
-        item['update_quantity_form'] = CartAddProductForm(initial = {
-            'quantity': item['quantity'],
-            'override': True
+    if cart:
+        for item in cart:
+            print("Item in cart: ", item)
+            item['update_quantity_form'] = CartAddProductForm(initial = {
+                'quantity': item['quantity'],
+                'override': True,
+                'item_options': None,
+                'extra_item_options': None,
+            })
+        coupon_apply_form = CouponApplyForm()
+        r = Recommender()
+        cart_products = [item['product'] for item in cart]
+        # products_in_cart = r.products_bought(cart)
+        print("cart_products: ", cart_products)
+        recommended_products = r.suggest_products_for(cart_products, max_results=4)
+        print("recommended products: ", recommended_products)
+        return render(request, 'cart/detail.html', {
+            'cart': cart,
+            'coupon_apply_form': coupon_apply_form, 
+            'recommended_products': recommended_products
         })
-    coupon_apply_form = CouponApplyForm()
-    r = Recommender()
-    cart_products = [item['product'] for item in cart]
-    print("cart_products: ", cart_products)
-    recommended_products = r.suggest_products_for(cart_products, max_results=4)
-    print("recommended products: ", recommended_products)
-    return render(request, 'cart/detail.html', {
-        'cart': cart,
-        'coupon_apply_form': coupon_apply_form, 
-        'recommended_products': recommended_products
-    })
+    else:
+        return redirect('shop:product_list')
 
     
     

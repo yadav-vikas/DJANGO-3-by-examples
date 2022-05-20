@@ -1,0 +1,72 @@
+[
+{
+  "model": "courses.subject",
+  "pk": 1,
+  "fields": {
+    "title": "Physics",
+    "slug": "physics"
+  }
+},
+{
+  "model": "courses.subject",
+  "pk": 2,
+  "fields": {
+    "title": "Maths",
+    "slug": "maths"
+  }
+},
+{
+  "model": "courses.subject",
+  "pk": 3,
+  "fields": {
+    "title": "history",
+    "slug": "history"
+  }
+},
+{
+  "model": "courses.subject",
+  "pk": 4,
+  "fields": {
+    "title": "enviorment",
+    "slug": "enviorment"
+  }
+},
+{
+  "model": "courses.subject",
+  "pk": 5,
+  "fields": {
+    "title": "chemistry",
+    "slug": "chemistry"
+  }
+},
+{
+  "model": "courses.course",
+  "pk": 1,
+  "fields": {
+    "owner": 1,
+    "subject": 5,
+    "title": "Chemical Engg",
+    "slug": "chemical-engg",
+    "overview": "This is chemical engg overview",
+    "created": "2022-05-18T12:12:38.152Z"
+  }
+},
+{
+  "model": "courses.module",
+  "pk": 1,
+  "fields": {
+    "course": 1,
+    "title": "organic chem",
+    "description": "organic chem desc"
+  }
+},
+{
+  "model": "courses.module",
+  "pk": 2,
+  "fields": {
+    "course": 1,
+    "title": "inorganic chem",
+    "description": "inorganic chem desc"
+  }
+}
+]

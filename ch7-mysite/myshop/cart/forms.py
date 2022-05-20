@@ -1,5 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
+from shop.models import ItemOptions, ExtraItemOptions, Product
+from shop.forms import ItemOptionsForm, ExtraItemOptionsForm
 
 PRODUCT_QUANTITY_CHOICES = [(i, str(i)) for i in range(1,21)]
 
@@ -17,5 +19,12 @@ class CartAddProductForm(forms.Form):
     Args:
         forms (list): quantity if products and override the quantity
     """
+
+
     quantity = forms.TypedChoiceField(choices=PRODUCT_QUANTITY_CHOICES, coerce=int, label=_('Quantity'))
     override = forms.BooleanField(required=False, initial=False, widget=forms.HiddenInput)
+    item_options = forms.ModelChoiceField(queryset=ItemOptions.objects.all())
+    override_item_options = forms.BooleanField(required=False, initial=False, widget=forms.HiddenInput)
+    extra_item_options = forms.ModelChoiceField(queryset=ExtraItemOptions.objects.all())
+    override_extra_item_options = forms.BooleanField(required=False, initial=False, widget=forms.HiddenInput)
+    

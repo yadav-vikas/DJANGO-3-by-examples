@@ -59,3 +59,21 @@ class Product(models.Model):
             output_size = (300,300)
             image.thumbnail(output_size)
             image.save(self.image.path)
+
+
+class ItemOptions(models.Model):
+    # option_id 
+    Product_name_item_options = models.ForeignKey(Product, related_name='item_options', on_delete=models.CASCADE)
+    option_name_item_options = models.CharField(max_length=50, db_index=True)
+    price_item_options = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return self.option_name_item_options
+
+class ExtraItemOptions(models.Model):
+    Product_name_extra_item_options = models.ForeignKey(Product, related_name='item_extra_options', on_delete=models.CASCADE)
+    option_name_extra_item_options  = models.CharField(max_length=50, db_index=True)
+    price_extra_item_options = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return self.option_name_extra_item_options

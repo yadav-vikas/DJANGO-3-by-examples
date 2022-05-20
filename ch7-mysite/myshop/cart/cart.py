@@ -1,6 +1,7 @@
 from decimal import Decimal
+from email.policy import default
 from django.conf import settings
-from shop.models import Product
+from shop.models import Product, ItemOptions, ExtraItemOptions
 from coupons.models import Coupon
 
 class Cart(object):
@@ -17,7 +18,7 @@ class Cart(object):
         self.cart = cart
         self.coupon_id = self.session.get('coupon_id') # coupon
 
-    def add(self, product, quantity=1, override_quantity=False):
+    def add(self, product, quantity=1, override_quantity=False, override_item_options=False, override_extra_item_options=False, item_options=None, extra_item_options=None):
         """Add products to the cart or update the quantity
 
         Args:
@@ -27,12 +28,21 @@ class Cart(object):
         """
         product_id = str(product.id)
         if product_id not in self.cart:
-            self.cart[product_id] = {'quantity': 0, 'price': str(product.price)}
+            self.cart[product_id] = {'quantity': 0, 'price': str(product.price), }
+            # 'item_options': item_options, 'extra_item_options': extra_item_options
         
         if override_quantity:
             self.cart[product_id]['quantity'] = quantity
         else:
             self.cart[product_id]['quantity'] += quantity
+        # if override_item_options:
+        #     self.cart[product_id]['item_options'] = item_options
+        # else:
+        #     pass
+        # if override_extra_item_options:
+        #     self.cart[product_id]['extra_item_options'] = extra_item_options
+        # else:
+        #     pass
         self.save()
 
     def save(self):
@@ -62,8 +72,17 @@ class Cart(object):
             cart[str(product.id)]['product'] = product
         
         for item in cart.values():
+            # try:
+            #     item['item_options'] = Decimal(item['item_options'])
+            #     item['extra_item_options'] = Decimal(item['extra_item_options'])
+            # except:
+            #     item['item_options'] = Decimal(0)
+            #     item['extra_item_options'] = Decimal(0)
+
             item['price'] = Decimal(item['price'])
-            item['total_price'] = item['price'] * item['quantity']
+
+            item['total_price'] = item['price'] * item['quantity'] 
+            # +  item['item_options'] + item['extra_item_options']
             yield item
 
     def __len__(self):

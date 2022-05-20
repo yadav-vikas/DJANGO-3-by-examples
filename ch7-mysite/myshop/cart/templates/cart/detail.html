@@ -13,6 +13,7 @@
       <tr>
         <th>{% trans "Image" %}</th>
         <th>{% trans "Product" %}</th>
+        <th>{% trans "Product Additionals" %}</th>
         <th>{% trans "Quantity" %}</th>
         <th>{% trans "Remove" %}</th>
         <th>{% trans "Unit price" %}</th>
@@ -30,10 +31,14 @@
               </a>
             </td>
             <td>{{ product.name }}</td>
+            <td>{{ cart.item_options }}</td>
+            <td>{{ cart.extra_item_options }}</td>
             <td>
               <form action="{% url 'cart:cart_add' product.id %}" method="post">
                 {{ item.update_quantity_form.quantity }}
                 {{ item.update_quantity_form.override }}
+                {{ item.update_quantity_form.item_options }}
+                {{ item.update_quantity_form.extra_item_options }}
                 <input type="submit" value="Update">
                 {% csrf_token %}
               </form>
