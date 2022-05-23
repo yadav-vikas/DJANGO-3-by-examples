@@ -6,8 +6,13 @@ name = "pypi"
 [packages]
 django = "*"
 pillow = "*"
+django-braces = "*"
+django-embed-video = "*"
+python-memcached = "*"
+django-memcache-status = "*"
 
 [dev-packages]
+autopep8 = "*"
 
 [requires]
 python_version = "3.9"

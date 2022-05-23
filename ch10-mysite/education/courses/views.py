@@ -2,15 +2,20 @@ from django.urls import reverse_lazy
 from django.shortcuts import redirect, get_object_or_404
 from django.views.generic.base import TemplateResponseMixin, View
 from django.views.generic.list import ListView
-from django.views.generic.edit import CreateView, UpdateView, \
-                                      DeleteView
-from django.contrib.auth.mixins import LoginRequiredMixin, \
-                                       PermissionRequiredMixin
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.forms.models import modelform_factory
 from django.apps import apps
 # from braces.views import CsrfExemptMixin, JsonRequestResponseMixin
 from .models import Course, Module, Content
 from .forms import ModuleFormSet
+
+from braces.views import CsrfExemptMixin, JsonRequestResponseMixin
+from django.db.models import Count
+from .models import Subject
+from django.views.generic.detail import DetailView
+
+from students.forms import CourseEnrollForm
 
 
 class OwnerMixin(object):
@@ -41,6 +46,7 @@ class ManageCourseListView(OwnerCourseMixin, ListView):
     template_name = 'courses/manage/course/list.html'
     permission_required = 'courses.view_course'
 
+
 class CourseCreateView(OwnerCourseEditMixin, CreateView):
     permission_required = 'courses.add_course'
 
@@ -52,6 +58,7 @@ class CourseUpdateView(OwnerCourseEditMixin, UpdateView):
 class CourseDeleteView(OwnerCourseMixin, DeleteView):
     template_name = 'courses/manage/course/delete.html'
     permission_required = 'courses.delete_course'
+
 
 class CourseModuleUpdateView(TemplateResponseMixin, View):
     """The CourseModuleUpdateView view handles the formset to add, update, and
@@ -86,7 +93,7 @@ class CourseModuleUpdateView(TemplateResponseMixin, View):
             respose: formset
         """
         return ModuleFormSet(instance=self.course, data=data)
-    
+
     def dispatch(self, request, pk):
         self.course = get_object_or_404(Course, id=pk, owner=request.user)
         return super().dispatch(request, pk)
@@ -102,7 +109,7 @@ class CourseModuleUpdateView(TemplateResponseMixin, View):
 
         Returns:
             respose: dict
-        """ 
+        """
         formset = self.get_formset()
         return self.render_to_response({
             'course': self.course,
@@ -118,6 +125,7 @@ class CourseModuleUpdateView(TemplateResponseMixin, View):
             'course': self.course,
             'formset': formset
         })
+
 
 class ContentCreateUpdateView(TemplateResponseMixin, View):
     """. It will allow you to create
@@ -165,44 +173,56 @@ and update different models' contents.
         Returns:
             form: model form
         """
-        Form = modelform_factory(model, exclude=['owner', 'order', 'created','updated'])
+        Form = modelform_factory(
+            model, exclude=['owner', 'order', 'created', 'updated'])
         return Form(*args, **kwargs)
 
+    # def dispatch(self, request, module_id, model_name, id=None):
+    #     """° module_id: The ID for the module that the content is/will be
+    #             associated with.
+    #             ° model_name: The model name of the content to create/update.
+    #             ° id: The ID of the object that is being updated. It's None to create new
+    #             objects.
+
+    #     Args:
+    #         request (_type_): _description_
+    #         module_id (_type_): _description_
+    #         model_name (_type_): _description_
+    #         id (_type_, optional): _description_. Defaults to None.
+
+    #     Returns:
+    #         _type_: _description_
+    #     """
+    #     self.module = get_object_or_404(Module, id=module_id, course__owner=request.user)
+    #     self.model = self.get_model(model_name)
+    #     if id:
+    #         self.obj = get_object_or_404(self.model, id=id, owner=request.user)
+    #     return super().dispatch(request, module_id, model_name, id)
+
     def dispatch(self, request, module_id, model_name, id=None):
-        """° module_id: The ID for the module that the content is/will be
-                associated with.
-                ° model_name: The model name of the content to create/update.
-                ° id: The ID of the object that is being updated. It's None to create new
-                objects.
-
-        Args:
-            request (_type_): _description_
-            module_id (_type_): _description_
-            model_name (_type_): _description_
-            id (_type_, optional): _description_. Defaults to None.
-
-        Returns:
-            _type_: _description_
-        """
-        self.module = get_object_or_404(Module, id=module_id, course__owner=request.user)
+        self.module = get_object_or_404(Module,
+                                       id=module_id,
+                                       course__owner=request.user)
         self.model = self.get_model(model_name)
         if id:
-            self.obj = get_object_or_404(self.model, id=id, owner=request.user)
+            self.obj = get_object_or_404(self.model,
+                                         id=id,
+                                         owner=request.user)
         return super().dispatch(request, module_id, model_name, id)
-    
+
     def get(self, request, module_id, model_name, id=None):
         form = self.get_form(self.model, instance=self.obj)
         return self.render_to_response({
             'form': form,
             'object': self.obj
         })
-    
+
     def post(self, request, module_id, model_name, id=None):
         form = self.get_form(
             self.model,
-            instance = self.obj,
-            data = request.POST,
-            files = request.FILES
+            instance=self.obj,
+            data=request.POST,
+            files=request.FILES
         )
         if form.is_valid():
             obj = form.save(commit=False)
@@ -211,25 +231,75 @@ and update different models' contents.
             if not id:
                 # new content
                 Content.objects.create(module=self.module, item=obj)
+                print("content object created!!")
             return redirect('module_content_list', self.module_id)
+        print("content object is already added!!")
         return self.render_to_response({
             'form': form,
-            'object':self.obj
+            'object': self.obj
         })
+
 
 class ContentDeleteView(View):
     def post(self, request, id):
-        content = get_object_or_404(Content, id=id, module__course__owner = request.user)
+        content = get_object_or_404(
+            Content, id=id, module__course__owner=request.user)
         module = content.module
         content.item.delete()
         content.delete()
         return redirect('module_content_list', module.id)
 
+
 class ModuleContentListView(TemplateResponseMixin, View):
     template_name = 'courses/manage/module/content_list.html'
 
     def get(self, request, module_id):
-        module = get_object_or_404(Module, id=module_id, course__owner = request.user)
+        module = get_object_or_404(
+            Module, id=module_id, course__owner=request.user)
         return self.render_to_response({
             'module': module
         })
+
+
+class ModuleOrderView(CsrfExemptMixin, JsonRequestResponseMixin, View):
+
+    def post(self, request):
+        for id, order in self.request_json.items():
+            Module.objects.filter(
+                id=id, course__owner=request.user).update(order=order)
+        return self.render_json_response({'saved': 'OK'})
+
+
+class ContentOrderView(CsrfExemptMixin, JsonRequestResponseMixin, View):
+
+    def post(self, request):
+        for id, order in self.request_json.items():
+            Content.objects.filter(
+                id=id, module__course__owner=request.user).update(order=order)
+        return self.render_json_response({'saved': 'OK'})
+
+class CourseListView(TemplateResponseMixin, View):
+    model = Course
+    template_name = 'courses/course/list.html'
+
+    def get(self, request, subject=None):
+        subjects = Subject.objects.annotate(total_courses=Count('courses'))
+        courses = Course.objects.annotate(total_modules=Count('modules'))
+
+        if subject:
+            subject = get_object_or_404(Subject, slug=subject)
+            courses = courses.filter(subject=subject)
+        return self.render_to_response({
+            'subjects': subjects,
+            'subject' : subject,
+            'courses' : courses
+        })
+
+class CourseDetailView(DetailView):
+    model = Course
+    template_name = 'courses/course/detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['enroll_form'] = CourseEnrollForm(initial={'course': self.object})
+        return context

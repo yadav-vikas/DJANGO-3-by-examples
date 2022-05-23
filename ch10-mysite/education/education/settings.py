@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from django.urls import reverse_lazy
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,6 +42,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'courses.apps.CoursesConfig',
+    'students.apps.StudentsConfig',
+
+    'embed_video',
+    'memcache_status',
 ]
 
 MIDDLEWARE = [
@@ -118,6 +125,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+
+
+LOGIN_REDIRECT_URL = reverse_lazy('student_course_list')
+LOGOUT_REDIRECT_URL = 'login'
+
+CACHES = {
+ 'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+ }
+}
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
